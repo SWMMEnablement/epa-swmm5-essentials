@@ -158,6 +158,12 @@ function Index() {
             computational engine source code — mirrored for fast download. Use the
             search and category filters below to find what you need.
           </p>
+          <div className="mt-6 inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-border bg-card font-mono text-xs text-muted-foreground">
+            <BarChart3 className="h-3.5 w-3.5" />
+            <span>
+              <span className="text-foreground font-semibold">{totalDownloads.toLocaleString()}</span> total downloads
+            </span>
+          </div>
         </div>
       </header>
 
@@ -237,9 +243,13 @@ function Index() {
                 </div>
 
                 <div className="mt-auto flex items-center justify-between gap-3 pt-3 border-t border-border">
-                  <span className="font-mono text-xs text-muted-foreground">
-                    {formatBytes(r.size_bytes)} · v{r.version}
-                  </span>
+                  <div className="font-mono text-xs text-muted-foreground flex flex-col gap-0.5">
+                    <span>{formatBytes(r.size_bytes)} · v{r.version}</span>
+                    <span className="inline-flex items-center gap-1">
+                      <Download className="h-3 w-3" />
+                      {(r.download_count ?? 0).toLocaleString()} downloads
+                    </span>
+                  </div>
                   <div className="flex gap-2">
                     <Button asChild variant="ghost" size="sm">
                       <a
@@ -252,7 +262,7 @@ function Index() {
                       </a>
                     </Button>
                     <Button asChild size="sm">
-                      <a href={downloadHref} download>
+                      <a href={downloadHref} download onClick={() => handleDownload(r.id)}>
                         <Download className="h-4 w-4 mr-1.5" />
                         Download
                       </a>
