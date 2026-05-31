@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { queryOptions, useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Download, Search, ExternalLink, FileArchive, FileCode2, FileText, Package } from "lucide-react";
+import { Download, Search, ExternalLink, FileArchive, FileCode2, FileText, Package, BarChart3 } from "lucide-react";
 
 type Resource = {
   id: string;
@@ -18,6 +18,7 @@ type Resource = {
   source_url: string;
   tags: string[];
   sort_order: number;
+  download_count: number;
 };
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
@@ -87,6 +88,7 @@ function categoryIcon(category: string) {
 
 function Index() {
   const { data: resources } = useSuspenseQuery(resourcesQuery);
+  const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("All");
 
@@ -109,6 +111,34 @@ function Index() {
       );
     });
   }, [resources, query, activeCategory]);
+
+  const totalDownloads = useMemo(
+    () => resources.reduce((sum, r) => sum + (r.download_count ?? 0), 0),
+    [resources],
+  );
+
+  const handleDownload = (id: string) => {
+    // Optimistic local update
+    queryClient.setQueryData<Resource[]>(["resources"], (prev) =>
+      prev?.map((r) =>
+        r.id === id ? { ...r, download_count: (r.download_count ?? 0) + 1 } : r,
+      ),
+    );
+    // Fire-and-forget RPC; reconcile on response
+    void supabase
+      .rpc("increment_download_count", { _resource_id: id })
+      .then(({ data, error }) => {
+        if (error) {
+          queryClient.invalidateQueries({ queryKey: ["resources"] });
+          return;
+        }
+        if (typeof data === "number") {
+          queryClient.setQueryData<Resource[]>(["resources"], (prev) =>
+            prev?.map((r) => (r.id === id ? { ...r, download_count: data } : r)),
+          );
+        }
+      });
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground font-sans">
