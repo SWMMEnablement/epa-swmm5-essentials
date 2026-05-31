@@ -19,6 +19,7 @@ export type Database = {
           category: string
           created_at: string
           description: string
+          download_count: number
           filename: string
           id: string
           size_bytes: number
@@ -32,6 +33,7 @@ export type Database = {
           category: string
           created_at?: string
           description: string
+          download_count?: number
           filename: string
           id?: string
           size_bytes: number
@@ -45,6 +47,7 @@ export type Database = {
           category?: string
           created_at?: string
           description?: string
+          download_count?: number
           filename?: string
           id?: string
           size_bytes?: number
@@ -61,7 +64,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_download_count: {
+        Args: { _resource_id: string }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never

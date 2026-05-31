@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { queryOptions, useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Download, Search, ExternalLink, FileArchive, FileCode2, FileText, Package } from "lucide-react";
+import { Download, Search, ExternalLink, FileArchive, FileCode2, FileText, Package, BarChart3 } from "lucide-react";
 
 type Resource = {
   id: string;
@@ -18,6 +18,7 @@ type Resource = {
   source_url: string;
   tags: string[];
   sort_order: number;
+  download_count: number;
 };
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
@@ -87,6 +88,7 @@ function categoryIcon(category: string) {
 
 function Index() {
   const { data: resources } = useSuspenseQuery(resourcesQuery);
+  const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("All");
 
@@ -110,6 +112,34 @@ function Index() {
     });
   }, [resources, query, activeCategory]);
 
+  const totalDownloads = useMemo(
+    () => resources.reduce((sum, r) => sum + (r.download_count ?? 0), 0),
+    [resources],
+  );
+
+  const handleDownload = (id: string) => {
+    // Optimistic local update
+    queryClient.setQueryData<Resource[]>(["resources"], (prev) =>
+      prev?.map((r) =>
+        r.id === id ? { ...r, download_count: (r.download_count ?? 0) + 1 } : r,
+      ),
+    );
+    // Fire-and-forget RPC; reconcile on response
+    void supabase
+      .rpc("increment_download_count", { _resource_id: id })
+      .then(({ data, error }) => {
+        if (error) {
+          queryClient.invalidateQueries({ queryKey: ["resources"] });
+          return;
+        }
+        if (typeof data === "number") {
+          queryClient.setQueryData<Resource[]>(["resources"], (prev) =>
+            prev?.map((r) => (r.id === id ? { ...r, download_count: data } : r)),
+          );
+        }
+      });
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground font-sans">
       <header className="border-b border-border">
@@ -128,6 +158,12 @@ function Index() {
             computational engine source code — mirrored for fast download. Use the
             search and category filters below to find what you need.
           </p>
+          <div className="mt-6 inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-border bg-card font-mono text-xs text-muted-foreground">
+            <BarChart3 className="h-3.5 w-3.5" />
+            <span>
+              <span className="text-foreground font-semibold">{totalDownloads.toLocaleString()}</span> total downloads
+            </span>
+          </div>
         </div>
       </header>
 
@@ -207,9 +243,13 @@ function Index() {
                 </div>
 
                 <div className="mt-auto flex items-center justify-between gap-3 pt-3 border-t border-border">
-                  <span className="font-mono text-xs text-muted-foreground">
-                    {formatBytes(r.size_bytes)} · v{r.version}
-                  </span>
+                  <div className="font-mono text-xs text-muted-foreground flex flex-col gap-0.5">
+                    <span>{formatBytes(r.size_bytes)} · v{r.version}</span>
+                    <span className="inline-flex items-center gap-1">
+                      <Download className="h-3 w-3" />
+                      {(r.download_count ?? 0).toLocaleString()} downloads
+                    </span>
+                  </div>
                   <div className="flex gap-2">
                     <Button asChild variant="ghost" size="sm">
                       <a
@@ -222,7 +262,7 @@ function Index() {
                       </a>
                     </Button>
                     <Button asChild size="sm">
-                      <a href={downloadHref} download>
+                      <a href={downloadHref} download onClick={() => handleDownload(r.id)}>
                         <Download className="h-4 w-4 mr-1.5" />
                         Download
                       </a>
