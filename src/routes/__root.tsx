@@ -80,11 +80,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "EPASWMM5 Basics — Installer & Source Library" },
       { name: "description", content: "Searchable library of EPA SWMM 5.2.4 Windows installers, computational engine source, and reference files." },
       { name: "author", content: "EPASWMM5 Basics" },
-      { property: "og:title", content: "EPASWMM5 Basics" },
-      { property: "og:description", content: "EPA SWMM 5.2.4 installers and source code, mirrored for quick download." },
+      { property: "og:title", content: "EPASWMM5 Basics — Installer & Source Library" },
+      { property: "og:description", content: "Searchable library of EPA SWMM 5.2.4 Windows installers, computational engine source, and reference files." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "EPASWMM5 Basics — Installer & Source Library" },
+      { name: "twitter:description", content: "Searchable library of EPA SWMM 5.2.4 Windows installers, computational engine source, and reference files." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a23be9c4-0da9-4730-b861-39d32f0aef5c/id-preview-ae49d1cb--7f9aa984-663f-488d-a2ab-6a5196ded88e.lovable.app-1780265506083.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a23be9c4-0da9-4730-b861-39d32f0aef5c/id-preview-ae49d1cb--7f9aa984-663f-488d-a2ab-6a5196ded88e.lovable.app-1780265506083.png" },
     ],
     links: [
       {
